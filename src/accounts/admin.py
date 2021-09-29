@@ -1,5 +1,4 @@
-from importlib._common import _
-
+from django.utils.translation import gettext, gettext_lazy as _
 from django.contrib import admin
 
 # Register your models here.
@@ -15,10 +14,10 @@ class CustomUserAdmin(UserAdmin):
     filter_horizontal = ()
     ordering = ('email',)
     fieldsets = (
-        (None, {'fields': ('email', 'password')}),
-        (_('Personal info'), {'fields': ('first_name', 'last_name',)}),
+        (_('Account'), {'fields': ('email', 'password')}),
+        (_('Personal'), {'fields': ('first_name', 'last_name','mobile')}),
         (_('Permissions'), {
-            'fields': ('is_active', 'is_staff'),
+            'fields': ('is_active', 'is_staff', 'user_type'),
         }),
     )
     add_fieldsets = (
@@ -31,8 +30,6 @@ class CustomUserAdmin(UserAdmin):
             if obj.user_type == 4:
                 obj.is_staff = True
                 obj.is_admin = True
-                obj.save()
-            else:
-                obj.save()
+            obj.save()
 
 admin.site.register(User, CustomUserAdmin)
