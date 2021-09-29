@@ -4,7 +4,7 @@ from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.db import models
 
 class UserManager(BaseUserManager):
-    def create_user(self, email, password=None,type=None):
+    def create_user(self, email, password=None):
         """
         Creates and saves a User with the given email and password.
         """
@@ -14,8 +14,6 @@ class UserManager(BaseUserManager):
         user = self.model(
             email=self.normalize_email(email),
         )
-        if type:
-            user.user_type = type
         user.set_password(password)
         user.save()
         return user
@@ -43,16 +41,15 @@ class User(AbstractBaseUser):
         (3, 'Sales'),
         (4, 'Admin'),
     )
-
     first_name = models.CharField(max_length=25)
     last_name = models.CharField(max_length=25)
     email = models.CharField(max_length=100, unique=True)
     mobile = models.CharField(max_length=20)
     date_created = models.DateTimeField(default=datetime.now)
-    user_type = models.PositiveSmallIntegerField(choices=USER_TYPE_CHOICES,default=1)
-    is_active = models.BooleanField(default=True)
-    is_staff = models.BooleanField(default=False)
-    is_admin = models.BooleanField(default=False)
+    user_type = models.PositiveSmallIntegerField(choices=USER_TYPE_CHOICES,default=1,verbose_name="Type d'utilisateur")
+    is_active = models.BooleanField(default=True,verbose_name="Actif")
+    is_staff = models.BooleanField(default=False,verbose_name="Staff")
+    is_admin = models.BooleanField(default=False,verbose_name='Admin')
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
