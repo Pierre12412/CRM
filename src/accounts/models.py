@@ -43,7 +43,7 @@ class User(AbstractBaseUser):
     )
     first_name = models.CharField(max_length=25)
     last_name = models.CharField(max_length=25)
-    email = models.CharField(max_length=100, unique=True)
+    email = models.EmailField(max_length=100, unique=True)
     mobile = models.CharField(max_length=20)
     date_created = models.DateTimeField(default=datetime.now)
     user_type = models.PositiveSmallIntegerField(choices=USER_TYPE_CHOICES,default=1,verbose_name="Type d'utilisateur")
