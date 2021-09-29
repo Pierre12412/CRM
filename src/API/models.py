@@ -21,16 +21,26 @@ class Customer(models.Model):
     sales_contact = models.ForeignKey(to=User,on_delete=models.CASCADE)
     existing_potential = models.CharField(choices=choices, max_length=20)
 
+    def __str__(self):
+        return self.email
 
 class Contract(models.Model):
     customer = models.ForeignKey(to=Customer,on_delete=models.CASCADE)
+    title = models.CharField(max_length=30)
     description = models.CharField(max_length=400)
     status = models.CharField(max_length=20)
+
+    def __str__(self):
+        return self.title
 
 
 class Event(models.Model):
     date = models.DateTimeField()
-    customer = models.ForeignKey(to=User,on_delete=models.CASCADE,related_name='Customer')
+    title = models.CharField(max_length=50)
+    customer = models.ForeignKey(to=Customer,on_delete=models.CASCADE,related_name='Customer')
     contract = models.ForeignKey(to=Contract,on_delete=models.CASCADE)
     support_contact = models.ForeignKey(to=User,on_delete=models.CASCADE,related_name='Support')
     status = models.CharField(max_length=20)
+
+    def __str__(self):
+        return self.title
