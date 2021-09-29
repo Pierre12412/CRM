@@ -4,7 +4,7 @@ from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.db import models
 
 class UserManager(BaseUserManager):
-    def create_user(self, email, password=None):
+    def create_user(self, email, password=None,type=None):
         """
         Creates and saves a User with the given email and password.
         """
@@ -14,6 +14,8 @@ class UserManager(BaseUserManager):
         user = self.model(
             email=self.normalize_email(email),
         )
+        if type:
+            user.user_type = type
         user.set_password(password)
         user.save()
         return user
@@ -26,32 +28,34 @@ class UserManager(BaseUserManager):
             email,
             password=password,
         )
-        user.staff = True
-        user.admin = True
+        user.is_staff = True
+        user.is_admin = True
+        user.user_type = 4
         user.save()
         return user
 
 
-jobs = [
-    ('N', 'None'),
-    ('Sup', 'Support'),
-    ('Sal', 'Sales'),
-    ('Adm','Admin'),
-]
 
-# Create your models here.
 class User(AbstractBaseUser):
+    USER_TYPE_CHOICES = (
+        (1, 'None'),
+        (2, 'Support'),
+        (3, 'Sales'),
+        (4, 'Admin'),
+    )
+
     first_name = models.CharField(max_length=25)
     last_name = models.CharField(max_length=25)
     email = models.CharField(max_length=100, unique=True)
     mobile = models.CharField(max_length=20)
     date_created = models.DateTimeField(default=datetime.now)
-    permission = models.CharField(choices=jobs,max_length=10)
+    user_type = models.PositiveSmallIntegerField(choices=USER_TYPE_CHOICES,default=1)
     is_active = models.BooleanField(default=True)
-    staff = models.BooleanField(default=False)  # a admin user; non super-user
-    admin = models.BooleanField(default=False)
+    is_staff = models.BooleanField(default=False)
+    is_admin = models.BooleanField(default=False)
 
     USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = []
 
     def __str__(self):
         return self.email
