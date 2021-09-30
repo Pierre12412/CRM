@@ -1,4 +1,5 @@
-from rest_framework import generics, status
+from rest_framework import generics, status, mixins
+from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 
 from API.models import Contract, Customer, Event
@@ -6,7 +7,7 @@ from API.permissions import IsInSalesTeam, IsInSupportTeam
 from API.serializers import ContractSerializer, CustomerSerializer
 
 
-class ContractsAll(generics.ListCreateAPIView):
+class ContractsAll(generics.ListAPIView):
     queryset = Contract.objects.all()
     serializer_class = ContractSerializer
     permission_classes = [IsInSalesTeam]
@@ -19,17 +20,29 @@ class ContractsAll(generics.ListCreateAPIView):
                 cont_list.append(contract.id)
         return qs.filter(id__in=cont_list)
 
-class Contracts(generics.RetrieveUpdateDestroyAPIView):
+class Contracts(mixins.UpdateModelMixin,mixins.RetrieveModelMixin,mixins.CreateModelMixin,GenericAPIView):
     queryset = Contract.objects.all()
     serializer_class = ContractSerializer
     permission_classes = [IsInSalesTeam]
 
-    def post(self,request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+    def get_queryset(self):
+        qs = super(Contracts, self).get_queryset()
+        pk = self.kwargs['pk']
+        contract = qs.filter(id=pk).first()
+        try :
+            if contract.customer.sales_contact.id == self.request.user.id:
+                return qs.filter(id=pk)
+        except:
+            pass
+        return None
+
+
 
 
 class CustomerAll(generics.ListCreateAPIView):
@@ -58,7 +71,7 @@ class CustomerAll(generics.ListCreateAPIView):
 
     def create(self, request, *args, **kwargs):
         if not IsInSalesTeam().has_permission(self.request,self):
-            return Response({'error':'You are not in Sales Team, you cannot create user'},status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'error':'You are not in Sales Team, you cannot create customer'},status=status.HTTP_401_UNAUTHORIZED)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
