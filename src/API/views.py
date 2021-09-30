@@ -64,3 +64,19 @@ class CustomerAll(generics.ListCreateAPIView):
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+class CustomerDetails(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Customer.objects.all()
+    serializer_class = CustomerSerializer
+    permission_classes = [IsInSalesTeam]
+
+    def get_queryset(self):
+        qs = super(CustomerDetails,self).get_queryset()
+        pk = self.kwargs['pk']
+        customer = qs.filter(id=pk).first()
+        try:
+            if customer.sales_contact.id != self.request.user.id:
+                return None
+        except AttributeError:
+            return None
+        return qs.filter(id=pk)
