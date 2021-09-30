@@ -97,10 +97,26 @@ class EventsAll(mixins.CreateModelMixin,GenericAPIView,mixins.RetrieveModelMixin
     serializer_class = EventSerializer
     permission_classes = [IsInSalesTeam]
 
+    def verify_contract_permission(self):
+        contract = self.kwargs['pk']
+        contract = Contract.objects.filter(id=contract).first()
+        try:
+            if not contract.customer.sales_contact.id == self.request.user.id:
+                return Response({'error': 'You are not authorized'}, status=status.HTTP_401_UNAUTHORIZED)
+        except AttributeError:
+            return Response({'error': 'Not found'}, status=status.HTTP_404_NOT_FOUND)
+        return True
+
     def get(self, request, *args, **kwargs):
+        permission = self.verify_contract_permission()
+        if permission is not True:
+            return permission
         return self.list(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
+        permission = self.verify_contract_permission()
+        if permission is not True:
+            return permission
         return self.create(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
