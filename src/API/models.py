@@ -2,6 +2,8 @@ from django.db import models
 from datetime import datetime
 from accounts.models import User
 
+
+
 # Create your models here.
 
 
@@ -18,11 +20,12 @@ class Customer(models.Model):
     company_name = models.CharField(max_length=250)
     date_created = models.DateTimeField(default=datetime.now)
     date_updated = models.DateTimeField()
-    sales_contact = models.ForeignKey(to=User,on_delete=models.CASCADE)
+    sales_contact = models.ForeignKey(to=User,on_delete=models.CASCADE,limit_choices_to={'user_type':3})
     existing_potential = models.CharField(choices=choices, max_length=20)
 
     def __str__(self):
         return self.email
+
 
 class Contract(models.Model):
     customer = models.ForeignKey(to=Customer,on_delete=models.CASCADE)
@@ -40,7 +43,7 @@ class Event(models.Model):
     title = models.CharField(max_length=50)
     customer = models.ForeignKey(to=Customer,on_delete=models.CASCADE,related_name='Customer')
     contract = models.ForeignKey(to=Contract,on_delete=models.CASCADE)
-    support_contact = models.ForeignKey(to=User,on_delete=models.CASCADE,related_name='Support')
+    support_contact = models.ForeignKey(to=User,on_delete=models.CASCADE,related_name='Support',limit_choices_to={'user_type':2})
     status = models.CharField(max_length=20)
 
     def __str__(self):
