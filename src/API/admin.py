@@ -9,7 +9,7 @@ class CustomerAdmin(admin.ModelAdmin):
     ordering = ('email',)
 
 class ContractAdmin(admin.ModelAdmin):
-    list_display = ['customer','description','status']
+    list_display = ['customer','description','status','price']
     list_filter = ('customer', 'status')
 
 class EventAdmin(admin.ModelAdmin):

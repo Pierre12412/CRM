@@ -29,6 +29,7 @@ class Contract(models.Model):
     title = models.CharField(max_length=30)
     description = models.CharField(max_length=400)
     status = models.CharField(max_length=20)
+    price = models.IntegerField(default=None)
 
     def __str__(self):
         return self.title
