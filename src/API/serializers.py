@@ -6,4 +6,4 @@ from API.models import Contract
 class ContractSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contract
-        fields = ('title','description','status','price')
+        fields = ('title','description','status','price','customer')
