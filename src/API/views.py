@@ -1,7 +1,5 @@
-from django.http import HttpResponseRedirect
-from django.shortcuts import render
-from django.urls import reverse
-from rest_framework import generics
+from rest_framework import generics, status
+from rest_framework.response import Response
 
 from API.models import Contract, Customer, Event
 from API.permissions import IsInSalesTeam, IsInSupportTeam
@@ -48,7 +46,7 @@ class CustomerAll(generics.ListCreateAPIView):
             customer_list = []
             for event in events:
                 if event.support_contact.id == self.request.user.id:
-                    customer_list.append(event.support_contact)
+                    customer_list.append(event.customer.id)
             return qs.filter(id__in=customer_list)
         #Is in Sales, show attributed customers
         else:
@@ -57,3 +55,12 @@ class CustomerAll(generics.ListCreateAPIView):
                 if customer.sales_contact.id == self.request.user.id:
                     cust_list.append(customer.id)
             return qs.filter(id__in=cust_list)
+
+    def create(self, request, *args, **kwargs):
+        if not IsInSalesTeam().has_permission(self.request,self):
+            return Response({'error':'You are not in Sales Team, you cannot create user'},status=status.HTTP_401_UNAUTHORIZED)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
