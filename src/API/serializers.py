@@ -2,7 +2,7 @@ from datetime import datetime
 
 from rest_framework import serializers
 
-from API.models import Contract, Customer
+from API.models import Contract, Customer, Event
 
 
 class ContractSerializer(serializers.ModelSerializer):
@@ -20,3 +20,14 @@ class CustomerSerializer(serializers.ModelSerializer):
         customer.date_updated = datetime.now()
         customer.save()
         return customer
+
+class EventSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Event
+        fields = ('title','date','status','contract','customer','support_contact')
+
+    def create(self, validated_data):
+        event = Event(**validated_data)
+        event.contract_id = self.context.get("contract_id")
+        event.save()
+        return event

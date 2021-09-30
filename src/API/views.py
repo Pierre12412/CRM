@@ -4,7 +4,7 @@ from rest_framework.response import Response
 
 from API.models import Contract, Customer, Event
 from API.permissions import IsInSalesTeam, IsInSupportTeam
-from API.serializers import ContractSerializer, CustomerSerializer
+from API.serializers import ContractSerializer, CustomerSerializer, EventSerializer
 
 
 class ContractsAll(generics.ListAPIView):
@@ -41,8 +41,6 @@ class Contracts(mixins.UpdateModelMixin,mixins.RetrieveModelMixin,mixins.CreateM
         except:
             pass
         return None
-
-
 
 
 class CustomerAll(generics.ListCreateAPIView):
@@ -93,3 +91,32 @@ class CustomerDetails(generics.RetrieveUpdateDestroyAPIView):
         except AttributeError:
             return None
         return qs.filter(id=pk)
+
+class EventsAll(mixins.CreateModelMixin,GenericAPIView,mixins.RetrieveModelMixin,mixins.ListModelMixin,):
+    queryset = Event.objects.all()
+    serializer_class = EventSerializer
+    permission_classes = [IsInSalesTeam]
+
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+    def create(self, request, *args, **kwargs):
+        if not IsInSalesTeam().has_permission(self.request,self):
+            return Response({'error':'You are not in Sales Team, you cannot create an event'},status=status.HTTP_401_UNAUTHORIZED)
+        serializer = self.get_serializer(data=request.data,context={'contract_id':self.kwargs['pk'],})
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def get_queryset(self):
+        qs = super(EventsAll, self).get_queryset()
+        contract = self.kwargs['pk']
+        event_list = []
+        for event in qs:
+            if event.contract_id == contract:
+                event_list.append(event.id)
+        return qs.filter(id__in=event_list)
