@@ -7,3 +7,5 @@ urlpatterns = [
     path('api-auth/', include('rest_framework.urls')),
     path('',include('API.urls')),
 ]
+
+import rest_framework.urls

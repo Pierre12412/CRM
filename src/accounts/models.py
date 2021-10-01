@@ -61,5 +61,16 @@ class User(AbstractBaseUser):
     def __str__(self):
         return self.email
 
+    def has_module_perms(self,app_label):
+        if self.user_type == 4:
+            return True
+        return False
+
+    def has_perm(self,app_label):
+        if self.user_type == 4:
+            return True
+        return False
+
+
 
     objects = UserManager()

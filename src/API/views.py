@@ -133,7 +133,7 @@ class EventsAll(mixins.CreateModelMixin,GenericAPIView,mixins.RetrieveModelMixin
         contract = self.kwargs['pk']
         contract = Contract.objects.filter(id=contract).first()
         try:
-            if not contract.customer.sales_contact.id == self.request.user.id:
+            if (contract.customer.sales_contact.id != self.request.user.id) and self.request.user.user_type != 4:
                 return Response({'error': 'You are not authorized'}, status=status.HTTP_401_UNAUTHORIZED)
         except AttributeError:
             return Response({'error': 'Not found'}, status=status.HTTP_404_NOT_FOUND)
@@ -143,7 +143,7 @@ class EventsAll(mixins.CreateModelMixin,GenericAPIView,mixins.RetrieveModelMixin
         event_id = self.kwargs['id']
         event = Event.objects.filter(id=event_id).first()
         try:
-            if not (event.support_contact.id == self.request.user.id and self.request.user.user_type == 2):
+            if not (event.support_contact.id == self.request.user.id and self.request.user.user_type == 2) and self.request.user.user_type != 4:
                 return Response({'error': 'You are not authorized'}, status=status.HTTP_401_UNAUTHORIZED)
         except AttributeError:
             return Response({'error': 'Not found'}, status=status.HTTP_404_NOT_FOUND)

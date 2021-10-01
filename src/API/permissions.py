@@ -6,7 +6,7 @@ class IsInSalesTeam(permissions.BasePermission):
 
     def has_permission(self, request, view):
         try:
-            if request.user.user_type == 3:
+            if request.user.user_type == 3 or request.user.user_type == 4:
                 return True
         except:
             pass
@@ -14,7 +14,7 @@ class IsInSalesTeam(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         try:
-            if request.user.user_type == 3:
+            if request.user.user_type == 3 or request.user.user_type == 4:
                 return True
         except:
             pass
@@ -26,7 +26,7 @@ class IsInSupportTeam(permissions.BasePermission):
 
     def has_permission(self, request, view):
         try:
-            if request.user.user_type == 2:
+            if request.user.user_type == 2 or request.user.user_type == 4:
                 return True
         except:
             pass
@@ -34,7 +34,7 @@ class IsInSupportTeam(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         try:
-            if request.user.user_type == 2:
+            if request.user.user_type == 2 or request.user.user_type == 4:
                 return True
         except:
             pass
