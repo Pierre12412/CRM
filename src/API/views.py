@@ -1,16 +1,27 @@
 from rest_framework import generics, status, mixins
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
+import django_filters.rest_framework
 
 from API.models import Contract, Customer, Event
 from API.permissions import IsInSalesTeam, IsInSupportTeam
 from API.serializers import ContractSerializer, CustomerSerializer, EventSerializer
+
+class ContractFilter(django_filters.FilterSet):
+    customer__first_name = django_filters.CharFilter(lookup_expr='icontains')
+
+    class Meta:
+        model = Contract
+        fields = ['customer']
 
 
 class ContractsAll(generics.ListAPIView):
     queryset = Contract.objects.all()
     serializer_class = ContractSerializer
     permission_classes = [IsInSalesTeam]
+    filter_backends = [django_filters.rest_framework.DjangoFilterBackend]
+    filter_class = ContractFilter
+
 
     def get_queryset(self):
         qs = super(ContractsAll, self).get_queryset()
@@ -20,10 +31,13 @@ class ContractsAll(generics.ListAPIView):
                 cont_list.append(contract.id)
         return qs.filter(id__in=cont_list)
 
+
+
 class Contracts(mixins.UpdateModelMixin,mixins.RetrieveModelMixin,mixins.CreateModelMixin,GenericAPIView):
     queryset = Contract.objects.all()
     serializer_class = ContractSerializer
     permission_classes = [IsInSalesTeam]
+
 
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -47,6 +61,8 @@ class CustomerAll(generics.ListCreateAPIView):
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
     permission_classes = [IsInSalesTeam | IsInSupportTeam]
+    filter_backends = [django_filters.rest_framework.DjangoFilterBackend]
+    filterset_fields = ['first_name', 'last_name','email',]
 
     def get_queryset(self):
         qs = super(CustomerAll, self).get_queryset()
