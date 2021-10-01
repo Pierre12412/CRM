@@ -39,6 +39,8 @@ class ContractsAll(generics.ListAPIView):
 
     def get_queryset(self):
         qs = super(ContractsAll, self).get_queryset()
+        if IsAdmin().has_permission(self.request,self):
+            return qs
         cont_list = []
         for contract in qs:
             if contract.customer.sales_contact.id == self.request.user.id:
@@ -81,6 +83,9 @@ class CustomerAll(generics.ListCreateAPIView):
     def get_queryset(self):
         qs = super(CustomerAll, self).get_queryset()
 
+        if IsAdmin().has_permission(self.request, self):
+            return qs
+
         #Is in Support, show customers for events
         if self.request.user.user_type == 2:
             events = Event.objects.all()
@@ -116,7 +121,7 @@ class CustomerDetails(generics.RetrieveUpdateDestroyAPIView):
         pk = self.kwargs['pk']
         customer = qs.filter(id=pk).first()
         try:
-            if customer.sales_contact.id != self.request.user.id:
+            if customer.sales_contact.id != self.request.user.id and self.request.user.user_type != 4:
                 return None
         except AttributeError:
             return None
@@ -131,6 +136,8 @@ class EventsAll(mixins.CreateModelMixin,GenericAPIView,mixins.RetrieveModelMixin
 
     def verify_contract_permission(self):
         contract = self.kwargs['pk']
+        if contract == 'all':
+            return Response({'error': 'You are not authorized'}, status=status.HTTP_401_UNAUTHORIZED)
         contract = Contract.objects.filter(id=contract).first()
         try:
             if (contract.customer.sales_contact.id != self.request.user.id) and self.request.user.user_type != 4:
@@ -140,7 +147,10 @@ class EventsAll(mixins.CreateModelMixin,GenericAPIView,mixins.RetrieveModelMixin
         return True
 
     def verify_event_permission(self):
-        event_id = self.kwargs['id']
+        try:
+            event_id = self.kwargs['id']
+        except:
+            return Response({'error': 'Give an event_id'}, status=status.HTTP_404_NOT_FOUND)
         event = Event.objects.filter(id=event_id).first()
         try:
             if not (event.support_contact.id == self.request.user.id and self.request.user.user_type == 2) and self.request.user.user_type != 4:
