@@ -190,7 +190,7 @@ class EventsAll(mixins.CreateModelMixin,GenericAPIView,mixins.RetrieveModelMixin
             if IsInSupportTeam().has_permission(self.request,self):
                 return qs.filter(support_contact_id=self.request.user.id)
             else:
-                return None
+                return Event.objects.none()
         try:
             event_id = self.kwargs['id']
             event = qs.filter(id=event_id)
@@ -200,7 +200,7 @@ class EventsAll(mixins.CreateModelMixin,GenericAPIView,mixins.RetrieveModelMixin
                 else:
                     return qs.filter(id=event_id)
             elif event or event_id:
-                return None
+                return Event.objects.none()
         except:
             if IsInSupportTeam().has_permission(self.request,self):
                 return qs.filter(support_contact_id=self.request.user.id,contract_id=contract)
