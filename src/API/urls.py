@@ -10,4 +10,6 @@ urlpatterns = [
     path('contracts/',ContractsAll.as_view()),
     path('contracts/<int:pk>',Contracts.as_view()),
     path('contracts/<int:pk>/events/',EventsAll.as_view()),
+    path('contracts/all/events/',EventsAll.as_view(),{'pk': 'all'}),
+    path('contracts/<int:pk>/events/<int:id>',EventsAll.as_view()),
 ]

@@ -92,10 +92,10 @@ class CustomerDetails(generics.RetrieveUpdateDestroyAPIView):
             return None
         return qs.filter(id=pk)
 
-class EventsAll(mixins.CreateModelMixin,GenericAPIView,mixins.RetrieveModelMixin,mixins.ListModelMixin,):
+class EventsAll(mixins.CreateModelMixin,GenericAPIView,mixins.RetrieveModelMixin,mixins.ListModelMixin,mixins.UpdateModelMixin,):
     queryset = Event.objects.all()
     serializer_class = EventSerializer
-    permission_classes = [IsInSalesTeam]
+    permission_classes = [IsInSalesTeam | IsInSupportTeam]
 
     def verify_contract_permission(self):
         contract = self.kwargs['pk']
@@ -107,11 +107,34 @@ class EventsAll(mixins.CreateModelMixin,GenericAPIView,mixins.RetrieveModelMixin
             return Response({'error': 'Not found'}, status=status.HTTP_404_NOT_FOUND)
         return True
 
+    def verify_event_permission(self):
+        event_id = self.kwargs['id']
+        event = Event.objects.filter(id=event_id).first()
+        try:
+            if not (event.support_contact.id == self.request.user.id and self.request.user.user_type == 2):
+                return Response({'error': 'You are not authorized'}, status=status.HTTP_401_UNAUTHORIZED)
+        except AttributeError:
+            return Response({'error': 'Not found'}, status=status.HTTP_404_NOT_FOUND)
+        return True
+
+
     def get(self, request, *args, **kwargs):
-        permission = self.verify_contract_permission()
+        return self.list(request, *args, **kwargs)
+
+    def put(self, request, *args, **kwargs):
+        permission = self.verify_event_permission()
         if permission is not True:
             return permission
-        return self.list(request, *args, **kwargs)
+        return self.update(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        event_id = self.kwargs['id']
+        instance = Event.objects.filter(id=event_id).first()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)
 
     def post(self, request, *args, **kwargs):
         permission = self.verify_contract_permission()
@@ -131,8 +154,26 @@ class EventsAll(mixins.CreateModelMixin,GenericAPIView,mixins.RetrieveModelMixin
     def get_queryset(self):
         qs = super(EventsAll, self).get_queryset()
         contract = self.kwargs['pk']
-        event_list = []
-        for event in qs:
-            if event.contract_id == contract:
-                event_list.append(event.id)
-        return qs.filter(id__in=event_list)
+        if contract == 'all':
+            if IsInSupportTeam().has_permission(self.request,self):
+                return qs.filter(support_contact_id=self.request.user.id)
+            else:
+                return None
+        try:
+            event_id = self.kwargs['id']
+            event = qs.filter(id=event_id)
+            if event and event_id:
+                if IsInSupportTeam().has_permission(self.request, self):
+                    return qs.filter(id=event_id,support_contact_id=self.request.user.id)
+                else:
+                    return qs.filter(id=event_id)
+            elif event or event_id:
+                return None
+        except:
+            if IsInSupportTeam().has_permission(self.request,self):
+                return qs.filter(support_contact_id=self.request.user.id,contract_id=contract)
+            event_list = []
+            for event in qs:
+                if event.contract_id == contract:
+                    event_list.append(event.id)
+            return qs.filter(id__in=event_list)
