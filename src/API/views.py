@@ -4,21 +4,35 @@ from rest_framework.response import Response
 import django_filters.rest_framework
 
 from API.models import Contract, Customer, Event
-from API.permissions import IsInSalesTeam, IsInSupportTeam
+from API.permissions import IsInSalesTeam, IsInSupportTeam, IsAdmin
 from API.serializers import ContractSerializer, CustomerSerializer, EventSerializer
 
 class ContractFilter(django_filters.FilterSet):
     customer__first_name = django_filters.CharFilter(lookup_expr='icontains')
+    customer__last_name = django_filters.CharFilter(lookup_expr='icontains')
+    customer__email = django_filters.CharFilter(lookup_expr='icontains')
+    date= django_filters.DateFilter(field_name='date', lookup_expr='exact')
+    price = django_filters.NumberFilter(field_name='price')
 
     class Meta:
         model = Contract
-        fields = ['customer']
+        fields = ['customer','date','price']
+
+class EventFilter(django_filters.FilterSet):
+    customer__first_name = django_filters.CharFilter(lookup_expr='icontains')
+    customer__last_name = django_filters.CharFilter(lookup_expr='icontains')
+    customer__email = django_filters.CharFilter(lookup_expr='icontains')
+    date= django_filters.DateFilter(field_name='date', lookup_expr='exact')
+
+    class Meta:
+        model = Event
+        fields = ['customer','date',]
 
 
 class ContractsAll(generics.ListAPIView):
     queryset = Contract.objects.all()
     serializer_class = ContractSerializer
-    permission_classes = [IsInSalesTeam]
+    permission_classes = [IsInSalesTeam | IsAdmin]
     filter_backends = [django_filters.rest_framework.DjangoFilterBackend]
     filter_class = ContractFilter
 
@@ -36,7 +50,7 @@ class ContractsAll(generics.ListAPIView):
 class Contracts(mixins.UpdateModelMixin,mixins.RetrieveModelMixin,mixins.CreateModelMixin,GenericAPIView):
     queryset = Contract.objects.all()
     serializer_class = ContractSerializer
-    permission_classes = [IsInSalesTeam]
+    permission_classes = [IsInSalesTeam | IsAdmin]
 
 
     def get(self, request, *args, **kwargs):
@@ -60,7 +74,7 @@ class Contracts(mixins.UpdateModelMixin,mixins.RetrieveModelMixin,mixins.CreateM
 class CustomerAll(generics.ListCreateAPIView):
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
-    permission_classes = [IsInSalesTeam | IsInSupportTeam]
+    permission_classes = [IsInSalesTeam | IsInSupportTeam | IsAdmin]
     filter_backends = [django_filters.rest_framework.DjangoFilterBackend]
     filterset_fields = ['first_name', 'last_name','email',]
 
@@ -95,7 +109,7 @@ class CustomerAll(generics.ListCreateAPIView):
 class CustomerDetails(generics.RetrieveUpdateDestroyAPIView):
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
-    permission_classes = [IsInSalesTeam]
+    permission_classes = [IsInSalesTeam | IsAdmin]
 
     def get_queryset(self):
         qs = super(CustomerDetails,self).get_queryset()
@@ -111,7 +125,9 @@ class CustomerDetails(generics.RetrieveUpdateDestroyAPIView):
 class EventsAll(mixins.CreateModelMixin,GenericAPIView,mixins.RetrieveModelMixin,mixins.ListModelMixin,mixins.UpdateModelMixin,):
     queryset = Event.objects.all()
     serializer_class = EventSerializer
-    permission_classes = [IsInSalesTeam | IsInSupportTeam]
+    permission_classes = [IsInSalesTeam | IsInSupportTeam | IsAdmin]
+    filter_backends = [django_filters.rest_framework.DjangoFilterBackend]
+    filter_class = EventFilter
 
     def verify_contract_permission(self):
         contract = self.kwargs['pk']

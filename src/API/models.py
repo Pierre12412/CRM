@@ -31,6 +31,7 @@ class Contract(models.Model):
     customer = models.ForeignKey(to=Customer,on_delete=models.CASCADE)
     title = models.CharField(max_length=30)
     description = models.CharField(max_length=400)
+    date = models.DateTimeField()
     status = models.CharField(max_length=20)
     price = models.IntegerField(default=None)
 

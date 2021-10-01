@@ -8,7 +8,7 @@ from API.models import Contract, Customer, Event
 class ContractSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contract
-        fields = ('title','description','status','price','customer')
+        fields = ('title','description','status','price','customer','date')
 
 class CustomerSerializer(serializers.ModelSerializer):
     class Meta:
