@@ -6,27 +6,7 @@ import django_filters.rest_framework
 from API.models import Contract, Customer, Event
 from API.permissions import IsInSalesTeam, IsInSupportTeam, IsAdmin
 from API.serializers import ContractSerializer, CustomerSerializer, EventSerializer
-
-class ContractFilter(django_filters.FilterSet):
-    customer__first_name = django_filters.CharFilter(lookup_expr='icontains')
-    customer__last_name = django_filters.CharFilter(lookup_expr='icontains')
-    customer__email = django_filters.CharFilter(lookup_expr='icontains')
-    date= django_filters.DateFilter(field_name='date', lookup_expr='exact')
-    price = django_filters.NumberFilter(field_name='price')
-
-    class Meta:
-        model = Contract
-        fields = ['customer','date','price']
-
-class EventFilter(django_filters.FilterSet):
-    customer__first_name = django_filters.CharFilter(lookup_expr='icontains')
-    customer__last_name = django_filters.CharFilter(lookup_expr='icontains')
-    customer__email = django_filters.CharFilter(lookup_expr='icontains')
-    date= django_filters.DateFilter(field_name='date', lookup_expr='exact')
-
-    class Meta:
-        model = Event
-        fields = ['customer','date',]
+from API.filters import ContractFilter, EventFilter
 
 
 class ContractsAll(generics.ListAPIView):
@@ -36,17 +16,11 @@ class ContractsAll(generics.ListAPIView):
     filter_backends = [django_filters.rest_framework.DjangoFilterBackend]
     filter_class = ContractFilter
 
-
     def get_queryset(self):
         qs = super(ContractsAll, self).get_queryset()
-        if IsAdmin().has_permission(self.request,self):
-            return qs
-        cont_list = []
-        for contract in qs:
-            if contract.customer.sales_contact.id == self.request.user.id:
-                cont_list.append(contract.id)
-        return qs.filter(id__in=cont_list)
-
+        if not IsAdmin().has_permission(self.request, self):
+            qs = qs.filter(customer__sales_contact=self.request.user.id)
+        return qs
 
 
 class Contracts(mixins.UpdateModelMixin,mixins.RetrieveModelMixin,mixins.CreateModelMixin,GenericAPIView):
@@ -111,6 +85,7 @@ class CustomerAll(generics.ListCreateAPIView):
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
+
 class CustomerDetails(generics.RetrieveUpdateDestroyAPIView):
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
@@ -126,6 +101,7 @@ class CustomerDetails(generics.RetrieveUpdateDestroyAPIView):
         except AttributeError:
             return None
         return qs.filter(id=pk)
+
 
 class EventsAll(mixins.CreateModelMixin,GenericAPIView,mixins.RetrieveModelMixin,mixins.ListModelMixin,mixins.UpdateModelMixin,):
     queryset = Event.objects.all()
@@ -158,7 +134,6 @@ class EventsAll(mixins.CreateModelMixin,GenericAPIView,mixins.RetrieveModelMixin
         except AttributeError:
             return Response({'error': 'Not found'}, status=status.HTTP_404_NOT_FOUND)
         return True
-
 
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

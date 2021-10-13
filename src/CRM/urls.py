@@ -8,4 +8,3 @@ urlpatterns = [
     path('',include('API.urls')),
 ]
 
-import rest_framework.urls
