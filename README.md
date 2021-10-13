@@ -16,14 +16,17 @@ Enfin executez le programme en allant dans le fichier src : cd src
 
 Vous devez posséder une base de donnée postgres version 13.4
 Vous devez créer un fichier .env dans le dossier src\CRM et y inclure ces informations :
------------------------------------------------------
+
 SECRET_KEY = clé secrette django (vous pouvez en générer une sur : https://djecrety.ir/)
+
 DEBUG = True/False
 
 NAME = Nom de la base de donnée
+
 USER = Utilisateur de la base de donnée
+
 PASSWORD = Mot de passe de connexion de l'utilisateur
------------------------------------------------------
+
 Puis en tapant : python manage.py runserver
 
 Le serveur de l'API étant lancé, vous pouvez maintenant faire vos appels à l'API en local
