@@ -28,7 +28,6 @@ class Contracts(mixins.UpdateModelMixin,mixins.RetrieveModelMixin,mixins.CreateM
     serializer_class = ContractSerializer
     permission_classes = [IsInSalesTeam | IsAdmin]
 
-
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
@@ -39,11 +38,8 @@ class Contracts(mixins.UpdateModelMixin,mixins.RetrieveModelMixin,mixins.CreateM
         qs = super(Contracts, self).get_queryset()
         pk = self.kwargs['pk']
         contract = qs.filter(id=pk).first()
-        try :
-            if contract.customer.sales_contact.id == self.request.user.id:
-                return qs.filter(id=pk)
-        except:
-            pass
+        if contract.customer.sales_contact.id == self.request.user.id or self.request.user.user_type == 4:
+            return qs.filter(id=pk)
         return None
 
 
@@ -78,7 +74,7 @@ class CustomerAll(generics.ListCreateAPIView):
 
     def create(self, request, *args, **kwargs):
         if not IsInSalesTeam().has_permission(self.request,self):
-            return Response({'error':'You are not in Sales Team, you cannot create customer'},status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'detail':"Vous n'avez pas la permission d'effectuer cette action."},status=status.HTTP_401_UNAUTHORIZED)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
@@ -113,26 +109,26 @@ class EventsAll(mixins.CreateModelMixin,GenericAPIView,mixins.RetrieveModelMixin
     def verify_contract_permission(self):
         contract = self.kwargs['pk']
         if contract == 'all':
-            return Response({'error': 'You are not authorized'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'detail': "Vous n'avez pas la permission d'effectuer cette action."}, status=status.HTTP_401_UNAUTHORIZED)
         contract = Contract.objects.filter(id=contract).first()
         try:
             if (contract.customer.sales_contact.id != self.request.user.id) and self.request.user.user_type != 4:
-                return Response({'error': 'You are not authorized'}, status=status.HTTP_401_UNAUTHORIZED)
+                return Response({'detail': "Vous n'avez pas la permission d'effectuer cette action."}, status=status.HTTP_401_UNAUTHORIZED)
         except AttributeError:
-            return Response({'error': 'Not found'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'detail': "Pas trouvé."}, status=status.HTTP_404_NOT_FOUND)
         return True
 
     def verify_event_permission(self):
         try:
             event_id = self.kwargs['id']
         except:
-            return Response({'error': 'Give an event_id'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'detail': 'Donnez un identifiant événement'}, status=status.HTTP_404_NOT_FOUND)
         event = Event.objects.filter(id=event_id).first()
         try:
             if not (event.support_contact.id == self.request.user.id and self.request.user.user_type == 2) and self.request.user.user_type != 4:
-                return Response({'error': 'You are not authorized'}, status=status.HTTP_401_UNAUTHORIZED)
+                return Response({'detail': "Vous n'avez pas la permission d'effectuer cette action."}, status=status.HTTP_401_UNAUTHORIZED)
         except AttributeError:
-            return Response({'error': 'Not found'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'detail': 'Pas trouvé'}, status=status.HTTP_404_NOT_FOUND)
         return True
 
     def get(self, request, *args, **kwargs):
@@ -161,7 +157,7 @@ class EventsAll(mixins.CreateModelMixin,GenericAPIView,mixins.RetrieveModelMixin
 
     def create(self, request, *args, **kwargs):
         if not IsInSalesTeam().has_permission(self.request,self):
-            return Response({'error':'You are not in Sales Team, you cannot create an event'},status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'detail':"Vous n'avez pas la permission d'effectuer cette action."},status=status.HTTP_401_UNAUTHORIZED)
         serializer = self.get_serializer(data=request.data,context={'contract_id':self.kwargs['pk'],})
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
@@ -172,8 +168,10 @@ class EventsAll(mixins.CreateModelMixin,GenericAPIView,mixins.RetrieveModelMixin
         qs = super(EventsAll, self).get_queryset()
         contract = self.kwargs['pk']
         if contract == 'all':
-            if IsInSupportTeam().has_permission(self.request,self):
+            if IsInSupportTeam().has_permission(self.request,self) and self.request.user.user_type != 4:
                 return qs.filter(support_contact_id=self.request.user.id)
+            elif self.request.user.user_type == 4:
+                return qs
             else:
                 return Event.objects.none()
         try:
