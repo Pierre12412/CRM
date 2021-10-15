@@ -9,7 +9,7 @@ from API.serializers import ContractSerializer, CustomerSerializer, EventSeriali
 from API.filters import ContractFilter, EventFilter
 
 
-class ContractsAll(generics.ListAPIView):
+class ContractsAll(generics.ListAPIView, mixins.CreateModelMixin):
     queryset = Contract.objects.all()
     serializer_class = ContractSerializer
     permission_classes = [IsInSalesTeam | IsAdmin]
@@ -22,8 +22,10 @@ class ContractsAll(generics.ListAPIView):
             qs = qs.filter(customer__sales_contact=self.request.user.id)
         return qs
 
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
 
-class Contracts(mixins.UpdateModelMixin,mixins.RetrieveModelMixin,mixins.CreateModelMixin,GenericAPIView):
+class Contracts(mixins.UpdateModelMixin,mixins.RetrieveModelMixin,GenericAPIView, mixins.DestroyModelMixin):
     queryset = Contract.objects.all()
     serializer_class = ContractSerializer
     permission_classes = [IsInSalesTeam | IsAdmin]
@@ -32,15 +34,21 @@ class Contracts(mixins.UpdateModelMixin,mixins.RetrieveModelMixin,mixins.CreateM
         return self.retrieve(request, *args, **kwargs)
 
     def put(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
+        return self.partial_update(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
 
     def get_queryset(self):
         qs = super(Contracts, self).get_queryset()
         pk = self.kwargs['pk']
         contract = qs.filter(id=pk).first()
-        if contract.customer.sales_contact.id == self.request.user.id or self.request.user.user_type == 4:
-            return qs.filter(id=pk)
-        return None
+        try:
+            if contract.customer.sales_contact.id == self.request.user.id or self.request.user.user_type == 4:
+                return qs.filter(id=pk)
+        except:
+            return Contract.objects.none()
+        return Contract.objects.none()
 
 
 class CustomerAll(generics.ListCreateAPIView):
@@ -138,7 +146,7 @@ class EventsAll(mixins.CreateModelMixin,GenericAPIView,mixins.RetrieveModelMixin
         permission = self.verify_event_permission()
         if permission is not True:
             return permission
-        return self.update(request, *args, **kwargs)
+        return self.partial_update(request, *args, **kwargs)
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
