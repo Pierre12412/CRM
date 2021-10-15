@@ -54,6 +54,26 @@ def test_contract_update():
         data = res.json()
 
         if authorization == 4:
+            assert data['title'][0]
+
+        if authorization == 3:
+            assert data['title'][0]
+
+        if authorization == 2:
+            assert data['detail'] == "Vous n'avez pas la permission d'effectuer cette action."
+
+def test_contract_post():
+    for user in users:
+        username = user[0]
+        password = user[1]
+        authorization = user[2]
+
+        res = requests.post(
+            'http://127.0.0.1:8000/contracts/',
+            auth=HTTPBasicAuth(username, password),
+        )
+        data = res.json()
+        if authorization == 4:
             assert data['title'][0] == 'Ce champ est obligatoire.'
 
         if authorization == 3:
@@ -163,13 +183,13 @@ def test_events_get_all():
         )
         data = res.json()
         if authorization == 4:
-            assert len(data) == 5
+            assert len(data) == 3
 
         if authorization == 3:
             assert data == []
 
         if authorization == 2:
-            assert len(data) == 3
+            assert len(data) == 2
 
 def test_event_update():
     for user in users:
@@ -183,10 +203,10 @@ def test_event_update():
         )
         data = res.json()
         if authorization == 4:
-            assert data['title'][0] == 'Ce champ est obligatoire.'
+            assert data['title'][0]
 
         if authorization == 3:
             assert data['detail'] == "Vous n'avez pas la permission d'effectuer cette action."
 
         if authorization == 2:
-            assert data['title'][0] == 'Ce champ est obligatoire.'
+            assert data['title'][0]
